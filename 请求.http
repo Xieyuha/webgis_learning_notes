@@ -1,0 +1,15 @@
+GET / HTTP/1.1
+# request method: GET /路径 协议版本
+Host: www.baidu.com
+Content-Type: application/json
+{
+    "loginId":"13521638393",
+    "loginPwd":"050216*jy"
+}
+# 请求头部 Host: 主机名
+#x/y MIME 描述格式
+#Content-Type: multipart/form-data; boundary=aaa 
+#上传图片方式
+#vs插件 REST Client 
+#< ./.png
+--aaa--
