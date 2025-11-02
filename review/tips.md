@@ -22,7 +22,12 @@ URL本质:获取资源的地址字符串
     align-items:flex-start|flex-end|center|stretch; //侧轴对齐方式
     flex-wrap:nowrap|wrap|wrap-reverse; //是否换行，默认nowrap不换行
 ##js
-ArrayBuffer:只读的、空间连续的、定长字节数组
+	ArrayBuffer:只读的、空间连续的、定长字节数组
+	proxy与denfinProperty区别(实际非同一层级，但vue2 3 的使用有不同)
+		object(基本方法)->function(也是对象) ->constructor(对象，支持内部方法construct 来new实例)。proxy可以重新定义基本方法
+		vue2使用defineProperty
+	拦截现有属性读写，使用set get，但有缺陷比如length
+		vue3用proxy，全拦截
 ###数组新api
     不改变原数组的方法：
     arr.toSorted((a,b)=>a.age-b.age)//不改变原数组，返回一个新排序后的数组
