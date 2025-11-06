@@ -159,7 +159,7 @@ ref 属性用于注册模板引用
 </script>
 ```
 
-####props的使用
+#### props的使用
 
 接收a，同时保存props+限制类型+?表示可选+指定默认值
 
@@ -169,7 +169,162 @@ import { defineProps,withDefaults } from 'vue'
 const props=defineProps<{a?:string}>()
 ```
 
+#### 生命周期
 
+创建：setup
+挂载：
+- onBeforeMount(()=>{log('挂载前')})
+- 先子后父
+
+#### 自定义hooks
+
+hooks/useSum.ts
+
+- 什么是`hook`？—— 本质是一个函数，把`setup`函数中使用的`Composition API`进行了封装，类似于`vue2.x`中的`mixin`。
+
+- 自定义`hook`的优势：复用代码, 让`setup`中的逻辑更清楚易懂。
+
+### 路由
+
+#### 路由基本理解
+
+- 是一种key-value的对应关系
+  - key:路径
+  - value:组件
+- route:路由
+- router:路由器，一个表，管理所有路由
+- router-link:页面不刷新跳转，组件是对a标签的渲染，根据是否匹配自动添加类名
+- router-view:展示对应组件，相当于容器
+
+
+#### 基本切换效果
+
+- 路由配置文件代码如下：
+  ```ts
+    import {createRouter,createWebHistory} from 'vue-router'
+    import Home from '@/pages/Home.vue'
+    import News from '@/pages/News.vue'
+    import About from '@/pages/About.vue'
+
+    const router = createRouter({
+    	history:createWebHistory(),
+    	routes:[
+    		{
+    			path:'/home',
+    			component:Home
+    		},
+    		{
+    			path:'/about',
+    			component:About
+    		}
+    	]
+    })
+    export default router
+  ```
+
+* `main.ts`代码如下：
+
+  ```ts
+  import router from './router/index'
+  app.use(router)
+  
+  app.mount('#app')
+  ```
+
+- `App.vue`代码如下
+
+  ```ts
+  <template>
+    <div class="app">
+      <h2 class="title">Vue路由测试</h2>
+      <!-- 导航区 -->
+      <div class="navigate">
+        <RouterLink to="/home" active-class="active">首页</RouterLink>
+        <RouterLink to="/news" active-class="active">新闻</RouterLink>
+        <RouterLink to="/about" active-class="active">关于</RouterLink>
+      </div>
+      <!-- 展示区 -->
+      <div class="main-content">
+        <RouterView></RouterView>
+      </div>
+    </div>
+  </template>
+  
+  <script lang="ts" setup name="App">
+    import {RouterLink,RouterView} from 'vue-router'  
+  </script>
+  ```
+
+#### 两个注意点
+1. 路由组件通常放在`pages`或`views`文件夹下，一般组件放在`components`文件夹下
+2. 通过点击导航，视觉效果上是页面跳转了，但实际上是组件切换了，页面并没有刷新，消失的组件会被销毁，新的组件会被创建并挂载
+
+#### 路由工作模式
+
+- history模式：利用`HTML5`的`History API`，通过`pushState`和`replaceState`方法，改变浏览器地址栏的路径而不会引起页面刷新
+- 优点：url美观，没有`#`符号
+- 缺点：需要后端支持，刷新页面会出现`404`错误
+
+  ```ts
+  const router = createRouter({
+    history:createWebHistory(),
+    routes:[...]
+  })
+  ```
+
+- hash模式：利用浏览器对`#`后面内容不发送给服务器的特性，通过监听`hashchange`事件，实现路由切换
+- 优点：兼容性好，不需要后端支持
+- 缺点：url中会出现`#`符号，在`SEO`(搜索)优化方面不如`history`模式
+  
+  ```ts
+  const router = createRouter({
+    history:createWebHashHistory(),
+    routes:[...]
+  })
+  ```
+
+#### to的两种写法
+
+- 字符串写法：`to="/home"`
+- 对象写法：
+
+  ```ts
+    <RouterLink :to="{path:'/home'}"></RouterLink>
+    <RouterLink :to="{name:'zhuye'}"></RouterLink>
+  ```
+
+#### router-link 与 router-view 组件
+- router-link:只是路由导航的触发器
+- router-view:是具体的渲染出口
+- 两者通过`router`实例关联在一起
+- 想要一对多展示，命名视图、嵌套路由
+
+  ```ts
+    import Header from '@/components/Header.vue'
+    <router-view name="header" />
+    <router-view name="main" />
+  ```
+  
+  ```ts
+    {
+      path: '/',
+      components: {
+        header: Header,
+        main: LayoutMain,
+      },
+      children: [
+      {
+        path: '/',
+        component: ProfileContent
+      },
+    ]
+    }
+  ```
+
+#### query参数与params参数
+- query参数：通过`?`传递参数，参数以键值对形式存在，多个参数用`&`连接
+  - 获取方式：`this.$route.query.参数名`或`useRoute().query.参数名`
+  - 示例：`/home?name=sam&age=18`
 
 ## Vue 2 基础
 
@@ -488,7 +643,7 @@ vm.$set(obj, 'newProp', value)
 3. 生命周期函数的名字不可更改，但函数的具体内容由开发者编写。
 4. 生命周期函数中的 `this` 指向 `vm` 或组件实例对象。
 
-挂载阶段：
+创建、挂载阶段：
 
 - `beforeCreate`：实例初始化之后，数据观测（data observer）和事件配置（event/watcher）之前调用。
 - `created`：实例创建完成后立即调用。此时已完成数据观测、属性与方法的运算、watch/event 的回调，但尚未开始挂载，`$el` 不可见。
