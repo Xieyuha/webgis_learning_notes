@@ -1,5 +1,15 @@
 # 简单是结果，复杂是过程
-
+## codex
+- /approval 
+	- auto 
+	- full access 文件夹外、访问网络
+- /new 
+- /init 创建agent.md
+- /compact 压缩上下文，提高专注力减少token消耗
+- /diff 
+- /mcp 标准化工具箱，可以调用外部工具
+- /mention @一个文件
+- codex exec "命令" 在codex环境执行命令
 ## html
 
 URL本质:获取资源的地址字符串

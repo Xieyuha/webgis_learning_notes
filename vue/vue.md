@@ -325,6 +325,72 @@ hooks/useSum.ts
 - query参数：通过`?`传递参数，参数以键值对形式存在，多个参数用`&`连接
   - 获取方式：`this.$route.query.参数名`或`useRoute().query.参数名`
   - 示例：`/home?name=sam&age=18`
+- params参数：通过路径传递参数，参数作为路径的一部分
+  - 获取方式：`this.$route.params.参数名`或`useRoute().params.参数名`
+  - 示例：`/detail/:id/:title`
+  - 注意：使用`params`参数时，不能使用字符串写法传递参数，必须使用对象写法，并且需要提供`name`属性
+
+  1. 传递参数
+  ```ts
+    <RouterLink :to="{path:'/detail',query:{v.id:1,v.title:'新闻详情'}}">详情</RouterLink>
+    <RouterLink :to="{name:'detail',params:{v.id:1,v.title:'新闻详情'}}">详情</RouterLink>
+  ```
+
+  2. 接收参数
+  ```ts
+    import {useRoute} from 'vue-router'
+    const route=useRoute()
+    console.log(route.params.id)
+    console.log(route.params.title)
+  ```
+
+* 备注1：使用`params`参数时，刷新页面会导致参数丢失，因为路径中没有携带参数
+* 备注2：使用`params`参数时，需要提前在规则中占位
+
+#### 路由的props传参
+
+作用：让路由组件更方便的收到参数（可以将路由参数作为`props`传给组件）
+
+  ```js
+  {
+  	name:'xiang',
+  	path:'detail/:id/:title/:content',
+  	component:Detail,
+
+    // props的对象写法，作用：把对象中的每一组key-value作为props传给Detail组件
+    // props:{a:1,b:2,c:3}, 
+
+    // props的布尔值写法，作用：把收到了每一组params参数，作为props传给Detail组件
+    // props:true
+
+    // props的函数写法，作用：把返回的对象中每一组key-value作为props传给Detail组件
+    props(route){
+      return route.query
+    }
+  }
+  ```
+
+#### replace
+- 路由跳转时，默认使用`push`方式，向历史记录添加新记录
+- 使用`replace`方式，替换当前历史记录，不添加新记录
+
+```ts
+  // push方式
+  router.push({path:'/home'})
+
+  // replace方式
+  router.replace({path:'/home'})
+  <RouterLink :to="{path:'/home'}" replace>首页</RouterLink>
+```
+
+#### 编程式导航
+- 脱离router-link，使用`router`实例进行路由跳转
+
+```ts
+  import {useRouter} from 'vue-router'
+  const router=useRouter()
+  // 跳转到首页
+  router.push({path:'/home'})
 
 ## Vue 2 基础
 
