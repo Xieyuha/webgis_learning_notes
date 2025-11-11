@@ -14,6 +14,11 @@
 
 URL本质:获取资源的地址字符串
 
+video标签常用属性:
+- controls:显示控制栏
+- autoplay:自动播放
+- loop:循环播放
+- muted:静音播放
 ## css
 
 ### 单位
@@ -134,8 +139,34 @@ px定尺寸，em局部调，rem根控全，vw/vh随窗变
 - arr.toFiltered(item=>item.age>18)//不改变原数组，返回一个新数组，包含所有age大于18的元素
 
 ## vue
-	组件、hooks、类、模块的联系
+define基本为宏函数
+### 单标签和双标签
+单标签 / 自闭合：
+- 原生 HTML void 元素：如 img br input meta link 等，语义上没有结束标签，可写 <img ...> 或在 JSX/Vue SFC 中写成 <img ... />。
+- Vue 组件允许自闭合：<MyButton />，等价于 <MyButton></MyButton>，仅在单文件组件或构建环境下生效（运行时模板需写闭合对）。
+- 自闭合时没有“内部内容”，因此无法直接写插槽内容，需用双标签形式才能传递默认插槽。
+
+双标签：
+- 形态：<Tag>children</Tag>。
+- 中间包裹内容可作为：
+	- 纯文本（会被解析、插值：{{ msg }}）。
+	- HTML 子节点（普通元素、组件）。
+	- 插槽内容（传递给子组件：默认插槽、具名插槽、作用域插槽）。
+常见坑：
+- 写 <Component/> 在浏览器内联模板（非 SFC）可能不被识别，需 <Component></Component>。
+
+总结：
+- 自闭合是语法糖，不影响组件实例。
+- 是否双标签取决于是否需要 children/slot。
+
+### 组件、hooks、类、模块的联系
 - 模块化定义代码的边界和依赖关系
 - 页面由 UI 驱动，长期维护依靠组件化组织视图
 - 组件内部，数据由类和reactive(/响应式)对象
 - hooks/composables对逻辑行为与副作用进行抽离，以 函数 形式实现复用
+
+### v-model 在html标签和组件的语法糖原理
+```ts
+    <input type="text" :value="username" @input="username = (<HTMLInputElement>event.target).value"/>
+    <Person :username="username" @update:modelValue="username = $event"/>
+```

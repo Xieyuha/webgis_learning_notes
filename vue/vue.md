@@ -559,7 +559,7 @@ app.mount('#app')
 
 #### storeToRefs
 
-  只会关注store中的数据，不会对方法进行ref包裹
+只会关注store中的数据，不会对方法进行ref包裹
 - 借助`storeToRefs`将`store`中的数据转为`ref`对象，方便在模板中使用。
 - 注意：`pinia`提供的`storeToRefs`只会将数据做转换，而`Vue`的`toRefs`会转换`store`中数据。
 
@@ -591,6 +591,263 @@ app.mount('#app')
 #### $subscribe 和 $onAction
 - $subscribe：监听`store`中数据的变化，当数据发生变化时，会触发回调函数。
 - $onAction：监听`store`中`action`的调用，当`action`被调用时，会触发回调函数。
+
+### 组件通信
+开发常用pinia props emit provide/inject mitt
+#### 1.props
+概述：`props`是使用频率最高的一种通信方式，常用与 ：**父 ↔ 子**。
+
+- 若 **父传子**：属性值是**非函数**。
+- 若 **子传父**：属性值是**函数**。
+
+#### 2.自定义事件
+ $emit：触发自定义事件。
+
+```ts
+/* 子传父 */
+// 父组件代码
+<template>
+  <div>
+    <ChildComponent @事件名1="父组件事件处理函数" />
+  </div>
+</template>
+
+<script>
+  import ChildComponent from './ChildComponent.vue'
+  function 父组件事件处理函数(数据){
+    //处理子组件传递过来的数据
+  }
+</script>
+
+// 子组件代码
+<script>
+  import { onMounted, defineEmits } from 'vue';
+  </div>
+</template>
+<script>
+  import ChildComponent from './ChildComponent.vue'
+  function 父组件事件处理函数(数据){
+    //处理子组件传递过来的数据
+  }
+// 子组件代码
+<script>
+  import { onMounted, defineEmits } from 'vue';
+    //声明事件
+    const emit = defineEmits(['事件名1','事件名2',...])
+    onMounted(() => {
+      //触发事件
+      emit('事件名1',数据)
+    })
+</script>
+```
+
+#### 3.mitt
+mitt 就是一个小巧的事件总线，用来在非父子组件之间“广播/订阅”事件
+- 跨层级、同级组件通信：不方便用 props/emit 时，用事件总线解耦。
+- 临时/轻量的全局事件：如“打开面板”“地图就绪”“过滤条件变化”等通知型事件。
+- 不适合做“全局状态存储”（用 Pinia 更合适），也不适合需要可追踪/可回放的状态。
+```ts
+// 安装 mitt：npm install mitt
+  //引入mitt得到emitter
+  import mitt from 'mitt'
+  //调用mitt得到emitter
+  const emitter = mitt()
+  //暴露emitter
+  export default emitter
+```
+组件内使用：
+```ts
+import { onMounted, onBeforeUnmount } from 'vue'
+import emitter from '@/utils/emitter'
+
+// 发送事件
+function openPanel(id: number) {
+  emitter.emit('panel:open', id)
+}
+
+// 监听事件并在卸载时清理
+function handleOpen(id: number) {
+  // ...处理逻辑
+}
+onMounted(() => emitter.on('panel:open', handleOpen))
+onBeforeUnmount(() => emitter.off('panel:open', handleOpen))
+```
+#### 4.v-model
+1. 概述：实现 **父↔子** 之间相互通信。
+2. 组件标签上的`v-model`的本质：`:moldeValue` ＋ `update:modelValue`事件。
+3. 也可以更换`value`，例如改成`abc`
+4. 如果`value`可以更换，那么就可以在组件标签上多次使用`v-model`
+- Vue 3 中，`v-model` 可以绑定多个属性，语法：
+```ts
+    <input type="text" :value="username" @input="username = (<HTMLInputElement>event.target).value"/>
+    <Person :username="username" @update:modelValue="username = $event"/>
+```
+$event
+- 对于原生事件，$event 是事件对象本身，例如在 input 事件中，$event 是 InputEvent 对象。
+  - 能.target
+- 对于自定义事件，$event 是触发事件时传递的数据/通过 $emit 传递的参数。
+  - 不能.target
+
+#### 5.$attrs
+
+1. 概述：`$attrs`用于实现**当前组件的父组件**，向**当前组件的子组件**通信（**祖→孙**）。
+
+2. 具体说明：`$attrs`是一个对象，包含所有父组件传入的标签属性。
+
+   >  注意：`$attrs`会自动排除`props`中声明的属性(可以认为声明过的 `props` 被子组件自己“消费”了)
+
+#### 6.$refs、$parent
+
+1. 概述：
+
+   * `$refs`用于 ：**父→子。**
+   * `$parent`用于：**子→父。**
+
+2. 原理如下：
+
+   | 属性      | 说明                                                     |
+   | --------- | -------------------------------------------------------- |
+   | `$refs`   | 值为对象，包含所有被`ref`属性标识的`DOM`元素或组件实例。 |
+   | `$parent` | 值为对象，当前组件的父组件实例对象。                     |
+
+#### 7.provide / inject
+
+1. 概述：`provide/inject` 是一种跨级组件通信的方式，适用于祖孙组件之间的通信。
+
+2. 使用场景：
+   - 当组件层级较深时，使用 `props` 和 `emit` 进行通信会导致代码臃肿。
+      - **可以跨任意层级（2 层、3 层、10 层……），注入时会沿父组件链向上查找第一个匹配的 `key`，直到根组件或找到为止**
+   - `provide/inject` 可以简化这种通信方式。
+
+3. 使用方法：
+   - 在祖先组件中使用 `provide` 提供数据。
+   - 在后代组件中使用 `inject` 注入数据。
+
+```ts
+// 祖先组件
+<script>
+import { provide } from 'vue'
+export default {
+  setup() {
+    const user = { name: 'Alice', age: 30 }
+    //       key    value  
+    provide('user', user)
+  }
+}
+</script>
+
+// 后代组件
+<script>
+import { inject } from 'vue'
+export default {
+  setup() {
+    const user = inject('user')
+    console.log(user) // { name: 'Alice', age: 30 }
+  }
+}
+</script>
+```
+
+#### 8.slot 插槽
+1. 概述：插槽（`slot`）是 Vue 提供的一种组件内容分发机制，允许父组件向子组件传递任意内容。
+2. 分类：
+##### 默认插槽
+- 概念：默认插槽是未命名的插槽，父组件在子组件标签内写的内容将渲染到子组件的 <slot> 位置。
+- 特点：一个组件只能有一个默认插槽，可承载任意模板内容（文本、元素、组件）。
+- 后备内容：可在子组件的 <slot> 中写默认内容，父组件未提供内容时显示。
+  例如：<slot>这里是默认内容</slot>
+- 用法：子组件放置 <slot></slot>；父组件直接把要分发的内容写在子组件标签内部。
+```ts
+//父组件中：
+  import Category from './Category.vue'
+  ...
+  <Category title="今日热门游戏">
+    <ul>
+      <li v-for="g in games" :key="g.id">{{ g.name }}</li>
+    </ul>
+  </Category>
+//子组件中：
+  <template>
+    <div class="item">
+      <h3>{{ title }}</h3>
+      <!-- 默认插槽 -->
+      <slot></slot>
+    </div>
+  </template>
+```
+
+##### 具名插槽
+- 概念：具名插槽是通过 `name` 属性命名的插槽，允许在一个组件中定义多个插槽。
+- 特点：一个组件可以有多个具名插槽，父组件通过 `v-slot` 指定内容分发到哪个插槽。
+- 用法：子组件放置 `<slot name="slotName"></slot>`；父组件使用 `<template v-slot:slotName>...</template>` 分发内容。
+```ts
+//父组件中：
+        <Category title="今日热门游戏">
+          <template #header>
+            <h4>这是头部内容</h4>
+          </template>
+          <ul>
+            <li v-for="g in games" :key="g.id">{{ g.name }}</li>
+          </ul>
+          <template v-slot:footer>
+            <p>这是底部内容</p>
+          </template>
+        </Category>
+//子组件中：
+        <template>
+          <div class="item">
+            <h3>{{ title }}</h3>
+            <!-- 具名插槽 -->
+            <slot name="header"></slot>
+            <slot name="default"></slot> <!-- 默认插槽 -->
+            <slot name="footer"></slot>
+          </div>
+        </template>
+```
+##### 条件插槽
+
+- 概念：条件插槽允许根据条件渲染不同的插槽内容。
+- 用法：在子组件中使用 `v-if`、`v-else-if`、`v-else` 控制插槽的显示。
+```ts
+<template>
+  <div class="card">
+    <div v-if="$slots.header" class="card-header">
+      <slot name="header" />
+    </div>
+    
+    <div v-if="$slots.default" class="card-content">
+      <slot />
+    </div>
+    
+    <div v-if="$slots.footer" class="card-footer">
+      <slot name="footer" />
+    </div>
+  </div>
+</template>
+```
+
+##### 作用域插槽
+
+- 概念：作用域插槽允许子组件向父组件传递数据，父组件可以使用这些数据来渲染插槽内容。
+- 用法：子组件通过 `<slot :propName="value"></slot>` 传递数据；父组件使用 `<template v-slot:slotName="slotProps">...</template>` 接收数据。
+数据在子，根据数据生成的结构由父决定
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Vue 2 基础
 
 ### 初识 Vue
