@@ -20,7 +20,39 @@ video标签常用属性:
 - loop:循环播放
 - muted:静音播放
 ## css
+### 样式原则
+1. 元素高度谁决定
+```css
+height: 100%;
+```
+先问自己：
+- 父元素的高度确定了吗？
+- 如果没有 → 100% 一定会失效
+- 如果父元素也写了 height:100% → 再问父元素的父元素？
+- 一直推到根
+*height: 100% 只有在父元素有明确高度的时候才有效。*
 
+2. 元素是否参与文档流
+```css
+position: absolute;
+```
+- 不会撑开父容器
+- 不占父容器空间
+- 视觉上可以漂在任何地方
+- 所以如果你的容器里全是 absolute 子元素，那么：
+- 父容器高度可能变成 0
+
+3. 绝对定位的参考点是谁
+- 这个元素相对谁定位？最接近的 position:relative 的祖先是谁？
+- 如果父级没有 relative，absolute 元素会相对整个页面定位。
+
+4. flex 决定排列，但必须有明确的高度或宽度
+flex 不会 magically 给你高度，除非：
+父容器 height 确定
+或子元素用 flex:1
+否则 flex 也不会救 height:100%。
+
+5. calc 是最安全的方式来把高度锁住
 ### 单位
 
 #### 绝对单位
@@ -70,7 +102,28 @@ px定尺寸，em局部调，rem根控全，vw/vh随窗变
 - 语法: border-radius: top-left top-right bottom-right bottom-left;
 - 也可以单独设置某个角的圆角: border-top-left-radius:10px;
 
+### position
+*position 管“悬浮、不参与布局的子元素”*
+- static:默认值，按正常文档流排列
+#### relative
+相对定位，相对于自身原位置偏移
+- 作为绝对定位子元素或伪元素(::before/::after)的锚点。
+- 轻微微调元素位置而不触发布局回流影响兄弟元素。
+- 控制遮盖关系（配合 z-index）。
+#### absolute
+绝对定位，相对于最近的已定位祖先元素（非 static）定位
+- 脱离文档流，不占据空间。
+- 用于创建悬浮元素、弹出层、工具提示等。
+- 位置由 top/right/bottom/left 控制。
+#### fixed
+固定定位，相对于视口定位
+- 脱离文档流，不占据空间。
+- 用于创建固定在屏幕上的元素，如导航栏、返回顶部按钮等。
+
 ### flexbox布局
+*display: `flex` 是给“需要管理子元素排列的容器”用的*
+flex:1 表示“这个子元素在主轴方向上占据剩余空间的比例为1”，即均分剩余空间。
+	- 父元素要设置 display:flex;
 - display:flex; //设置为flex布局
 - flex-direction:row|row-reverse|column|column-reverse; //主轴方向，默认row(水平从左到右)
 - justify-content:flex-start|flex-end|center|space-between|space-around; //主轴对齐方式
